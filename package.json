@@ -1,9 +1,29 @@
 {
-  "name": "socket-chat-example",
+  "name": "coin-game",
   "version": "0.0.1",
   "description": "my first socket.io app",
   "dependencies": {
     "express": "4.10.2",
     "socket.io": "1.2.0"
-  }
+  },
+  "main": "index.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rtoal/coin-game.git"
+  },
+  "keywords": [
+    "socket.io",
+    "node",
+    "express"
+  ],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/rtoal/coin-game/issues"
+  },
+  "homepage": "https://github.com/rtoal/coin-game#readme"
 }
