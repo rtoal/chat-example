@@ -94,6 +94,7 @@ exports.state = () => {
 exports.move = (direction) => {
   const delta = { U: [0, -1], R: [1, 0], D: [0, 1], L: [-1, 0] }[direction];
   if (delta) {
+    // TODO: This has to be an actual player.
     const key = 'player:alice';
     const [x, y] = database[key].split(',');
     const [newX, newY] = [clamp(+x + delta[0], 0, WIDTH - 1), clamp(+y + delta[1], 0, HEIGHT - 1)];
@@ -103,8 +104,11 @@ exports.move = (direction) => {
       delete database.coins[`${newX},${newY}`];
     }
     database[key] = `${newX},${newY}`;
-    //
-    // TODO when number of coins goes to zero, regenerate 100 new ones.
+
+    // When all coins collected, generate a new batch.
+    if (Object.keys(database.coins).length == 0) {
+      placeCoins();
+    }
   }
 };
 

@@ -2,6 +2,7 @@
   const socket = io();
   const canvas = document.querySelector('canvas');
   const tableBody = document.querySelector('tbody');
+
   const ctx = canvas.getContext('2d');
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -61,7 +62,4 @@
 
   // When the server sends us a `state` message, we render the game state it sends us.
   socket.on('state', renderBoard);
-
-  // The client begins by sending an initial request for the game state.
-  socket.emit('state');
 })();
