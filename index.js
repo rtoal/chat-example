@@ -11,14 +11,17 @@ app.get('/', function(req, res){
 app.use(express.static('public'))
 
 io.on('connection', (socket) => {
-  console.log('Connection')
+  // TODO: We need a scheme for collecting player names.
+
+  // Accept a move from the client and perform it. Then respond with the game state.
   socket.on('move', (direction) => {
-    console.log('move', direction)
     game.move(direction);
+    // TODO: THIS NEEDS TO BE BROADCAST TO EVERYONE.
     io.emit('state', game.state());
   });
+
+  // Send the game state whenever the client asks.
   socket.on('state', () => {
-    console.log('state')
     io.emit('state', game.state());
   });
 });

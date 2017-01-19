@@ -37,8 +37,6 @@ function randomPoint() {
 // usednames        set of all used names, used to check quickly if a name has been used
 //
 const database = {
-  'player:alice': '4,6',
-  'player:bob': '30,10',
   scores: {},
   usednames: new Set(),
   coins: {},
@@ -49,7 +47,7 @@ exports.addPlayer = (name) => {
     return false;
   }
   database.usednames.add(name);
-  database[`player:${name}`] = randomPoint.toString();
+  database[`player:${name}`] = randomPoint().toString();
   database.scores[name] = 0;
   return true;
 };
@@ -76,14 +74,20 @@ function placeCoins() {
   }
 }
 
+// Return only the parts of the database relevant to the client. The client only cares about
+// the positions of each player, the scores, and the positions (and values) of each coin.
+// Note that we return the scores in sorted order, so the client just has to iteratively
+// walk through an array of name-score pairs and render them.
 exports.state = () => {
   const positions = Object.entries(database)
     .filter(([key, _]) => key.startsWith('player:'))
     .map(([key, value]) => [key.substring(7), value]);
+  let scores = Object.entries(database.scores);
+  scores.sort(([k1, v1], [k2, v2]) => v1 < v2)
   return {
     positions,
+    scores,
     coins: database.coins,
-    scores: database.scores,
   };
 };
 
@@ -95,11 +99,15 @@ exports.move = (direction) => {
     const [newX, newY] = [clamp(+x + delta[0], 0, WIDTH - 1), clamp(+y + delta[1], 0, HEIGHT - 1)];
     const value = database.coins[`${newX},${newY}`];
     if (value) {
-      database[key] += value;
+      database.scores[key.substring(7)] += value;
       delete database.coins[`${newX},${newY}`];
     }
     database[key] = `${newX},${newY}`;
+    //
+    // TODO when number of coins goes to zero, regenerate 100 new ones.
   }
 };
 
 placeCoins();
+exports.addPlayer('alice');
+exports.addPlayer('bob');
