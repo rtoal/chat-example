@@ -1,0 +1,18 @@
+body {
+  margin: 5px;
+}
+
+canvas {
+  border: 1px solid grey;
+  display: inline-block;
+  width: 640px;
+}
+
+table {
+  display: inline-block;
+}
+
+body > * {
+  vertical-align: top;
+  line-height: normal;
+}
