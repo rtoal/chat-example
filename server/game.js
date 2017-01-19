@@ -7,19 +7,11 @@
  *   - addPlayer
  */
 
+const {clamp, randomPoint, permutationArray} = require('./gameutil')
+
 const WIDTH = 64;
 const HEIGHT = 64;
 
-function clamp(value, low, high) {
-  return Math.max(low, Math.min(high, value));
-}
-
-function randomPoint() {
-  return [
-    Math.floor(Math.random() * WIDTH),
-    Math.floor(Math.random() * HEIGHT),
-  ];
-}
 
 // A KEY-VALUE "DATABASE" FOR THE GAME STATE.
 //
@@ -47,31 +39,17 @@ exports.addPlayer = (name) => {
     return false;
   }
   database.usednames.add(name);
-  database[`player:${name}`] = randomPoint().toString();
+  database[`player:${name}`] = randomPoint(WIDTH, HEIGHT).toString();
   database.scores[name] = 0;
   return true;
 };
 
 function placeCoins() {
-  const NUM_SQUARES = WIDTH * HEIGHT;
-  const array = Array(NUM_SQUARES).fill(0).map((_, i) =>
-    `${Math.floor(i / WIDTH)},${Math.floor(i % WIDTH)}`);
-  for (let i = 0; i < 102; i += 1) {
-    const j = Math.floor(Math.random() * NUM_SQUARES);
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-  for (let i = 0; i < 50; i += 1) {
-    database.coins[array[i]] = 1;
-  }
-  for (let i = 50; i < 75; i += 1) {
-    database.coins[array[i]] = 2;
-  }
-  for (let i = 75; i < 95; i += 1) {
-    database.coins[array[i]] = 5;
-  }
-  for (let i = 95; i < 100; i += 1) {
-    database.coins[array[i]] = 10;
-  }
+  permutationArray(WIDTH * HEIGHT).slice(0, 100).forEach((position, i) => {
+    const coinValue = i < 50 ? 1 : i < 75 ? 2 : i < 95 ? 5 : 10;
+    const index = `${Math.floor(position / WIDTH)},${Math.floor(position % WIDTH)}`
+    database.coins[index] = coinValue;
+  })
 }
 
 // Return only the parts of the database relevant to the client. The client only cares about
