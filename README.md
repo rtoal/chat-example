@@ -1,7 +1,5 @@
-# chat-example
+# A Coin Collecting Game
 
-This is the source code for a very simple chat example used for 
-the [Getting Started](http://socket.io/get-started/chat/) guide 
-of the Socket.IO website.
+This is the basis for a homework assignment in a database class.
 
-Please refer to it to learn how to run this application.
+Students will swap out the in-process data structures on the server with a Redis store.
