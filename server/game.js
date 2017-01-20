@@ -63,7 +63,7 @@ exports.state = () => {
     .filter(([key, _]) => key.startsWith('player:')) // eslint-disable-line no-unused-vars
     .map(([key, value]) => [key.substring(7), value]);
   const scores = Object.entries(database.scores);
-  scores.sort(([k1, v1], [k2, v2]) => v1 < v2); // eslint-disable-line no-unused-vars
+  scores.sort(([, v1], [, v2]) => v1 < v2);
   return {
     positions,
     scores,
