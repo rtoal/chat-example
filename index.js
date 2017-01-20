@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
-var http = require('http').Server(app);
-var io = require('socket.io')(http);
+const http = require('http').Server(app);
+const io = require('socket.io')(http);
 const game = require('./server/game');
 
 // Images, scripts, stylesheets, will be in this directory.
@@ -24,7 +24,7 @@ io.on('connection', (socket) => {
   });
 });
 
-const port = process.env.port || 3000;
+const port = process.env.PORT || 3000;
 http.listen(port, () => {
-  console.log(`Server listening on port ${3000}`);
+  console.log(`Server listening on port ${port}`);
 });
