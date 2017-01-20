@@ -2,17 +2,24 @@ body {
   margin: 5px;
 }
 
+#lobby {
+  display: block;
+}
+
+#game {
+  display: none;
+}
+
 canvas {
+  vertical-align: top;
+  line-height: normal;
   border: 1px solid grey;
   display: inline-block;
   width: 640px;
 }
 
 table {
-  display: inline-block;
-}
-
-body > * {
   vertical-align: top;
   line-height: normal;
+  display: inline-block;
 }

@@ -6,11 +6,17 @@
     <link rel="stylesheet" href="client.css">
   </head>
   <body>
-    <canvas width="640" height="640"></canvas>
-    <table>
-      <tr><th colspan="2">High Scores
-      <tr><th>Name<th>Score
-    </table>
+    <div id="lobby">
+      <p>My name is <input id="name"> and I'd like to <button id="join">join the game</button></p>
+      <p class="error"></p>
+    </div>
+    <div id="game">
+      <canvas width="640" height="640"></canvas>
+      <table>
+        <tr><th colspan="2">High Scores
+        <tr><th>Name<th>Score
+      </table>
+    </div>
     <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
     <script src="client.js"></script>
   </body>

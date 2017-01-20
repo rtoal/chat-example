@@ -2,15 +2,17 @@
  * Server side game module. Maintains the game state and processes all the messages from clients.
  *
  * Exports:
- *   - move
- *   - state
- *   - addPlayer
+ *   - addPlayer(name)
+ *   - move(direction, name)
+ *   - state()
  */
 
-const {clamp, randomPoint, permutationArray} = require('./gameutil')
+const { clamp, randomPoint, permutation } = require('./gameutil');
 
 const WIDTH = 64;
 const HEIGHT = 64;
+const MAX_PLAYER_NAME_LENGTH = 32;
+const NUM_COINS = 100;
 
 
 // A KEY-VALUE "DATABASE" FOR THE GAME STATE.
@@ -23,10 +25,10 @@ const HEIGHT = 64;
 //
 // Here is how the storage is laid out:
 //
-// player:<name>    "<row>,<col>"
-// scores           sorted set with score and playername
-// coins            hash { "<row>,<col>": coinvalue }
-// usednames        set of all used names, used to check quickly if a name has been used
+// player:<name>    string       "<row>,<col>"
+// scores           sorted set   playername with score
+// coins            hash         { "<row>,<col>": coinvalue }
+// usednames        set          all used names, to check quickly if a name has been used
 //
 const database = {
   scores: {},
@@ -35,7 +37,7 @@ const database = {
 };
 
 exports.addPlayer = (name) => {
-  if (database.usednames.has(name)) {
+  if (name.length === 0 || name.length > MAX_PLAYER_NAME_LENGTH || database.usednames.has(name)) {
     return false;
   }
   database.usednames.add(name);
@@ -45,11 +47,11 @@ exports.addPlayer = (name) => {
 };
 
 function placeCoins() {
-  permutationArray(WIDTH * HEIGHT).slice(0, 100).forEach((position, i) => {
+  permutation(WIDTH * HEIGHT).slice(0, NUM_COINS).forEach((position, i) => {
     const coinValue = i < 50 ? 1 : i < 75 ? 2 : i < 95 ? 5 : 10;
-    const index = `${Math.floor(position / WIDTH)},${Math.floor(position % WIDTH)}`
+    const index = `${Math.floor(position / WIDTH)},${Math.floor(position % WIDTH)}`;
     database.coins[index] = coinValue;
-  })
+  });
 }
 
 // Return only the parts of the database relevant to the client. The client only cares about
@@ -58,10 +60,10 @@ function placeCoins() {
 // walk through an array of name-score pairs and render them.
 exports.state = () => {
   const positions = Object.entries(database)
-    .filter(([key, _]) => key.startsWith('player:'))
+    .filter(([key, _]) => key.startsWith('player:')) // eslint-disable-line no-unused-vars
     .map(([key, value]) => [key.substring(7), value]);
-  let scores = Object.entries(database.scores);
-  scores.sort(([k1, v1], [k2, v2]) => v1 < v2)
+  const scores = Object.entries(database.scores);
+  scores.sort(([k1, v1], [k2, v2]) => v1 < v2); // eslint-disable-line no-unused-vars
   return {
     positions,
     scores,
@@ -69,27 +71,24 @@ exports.state = () => {
   };
 };
 
-exports.move = (direction) => {
+exports.move = (direction, name) => {
   const delta = { U: [0, -1], R: [1, 0], D: [0, 1], L: [-1, 0] }[direction];
   if (delta) {
-    // TODO: This has to be an actual player.
-    const key = 'player:alice';
-    const [x, y] = database[key].split(',');
+    const playerKey = `player:${name}`;
+    const [x, y] = database[playerKey].split(',');
     const [newX, newY] = [clamp(+x + delta[0], 0, WIDTH - 1), clamp(+y + delta[1], 0, HEIGHT - 1)];
     const value = database.coins[`${newX},${newY}`];
     if (value) {
-      database.scores[key.substring(7)] += value;
+      database.scores[name] += value;
       delete database.coins[`${newX},${newY}`];
     }
-    database[key] = `${newX},${newY}`;
+    database[playerKey] = `${newX},${newY}`;
 
     // When all coins collected, generate a new batch.
-    if (Object.keys(database.coins).length == 0) {
+    if (Object.keys(database.coins).length === 0) {
       placeCoins();
     }
   }
 };
 
 placeCoins();
-exports.addPlayer('alice');
-exports.addPlayer('bob');

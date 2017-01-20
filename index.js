@@ -1,27 +1,36 @@
 const express = require('express');
+
 const app = express();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const game = require('./server/game');
 
-// Images, scripts, stylesheets, will be in this directory.
-app.use(express.static('public'))
+// Images, scripts, stylesheets, and other assets will be in this directory.
+app.use(express.static('public'));
 
 app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/public/index.html');
+  res.sendFile(`${__dirname}/public/index.html`);
 });
 
+
 io.on('connection', (socket) => {
-  // TODO: We need a scheme for collecting player names.
-
-  // Send state right when the client connects.
-  io.emit('state', game.state());
-
-  // Accept a move from the client and perform it. Then broadcast the game state.
-  socket.on('move', (direction) => {
-    game.move(direction);
-    io.emit('state', game.state());
-  });
+  // When first connected, don't accept any messages except `name`. Keep accepting name
+  // messages until a name is accepted. When a name is finally accepted, send a `welcome`
+  // message and a the current game state, "turn off" the `name` message listener, then
+  // start accepting `move` messages.
+  const nameListener = (name) => {
+    let trimmedName = name.trim();
+    if (game.addPlayer(trimmedName)) {
+      io.emit('welcome');
+      io.emit('state', game.state());
+      socket.removeListener('name', nameListener);
+      socket.on('move', (direction) => {
+        game.move(direction, trimmedName);
+        io.emit('state', game.state());
+      });
+    }
+  };
+  socket.on('name', nameListener);
 });
 
 const port = process.env.PORT || 3000;

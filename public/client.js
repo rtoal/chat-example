@@ -1,5 +1,5 @@
 (() => {
-  const socket = io();
+  const socket = io(); // eslint-disable-line no-undef
   const canvas = document.querySelector('canvas');
   const tableBody = document.querySelector('tbody');
 
@@ -16,8 +16,11 @@
   function drawPlayers(gameState) {
     gameState.positions.forEach(([name, position]) => {
       const [row, column] = position.split(',');
-      ctx.fillStyle = 'red';
+      // ctx.fillStyle = `hsla(${Math.floor(Math.random() * 260) + 100}, 100%, 48%, 1)`; // Mebbe?
+      ctx.fillStyle = '#60c';
       ctx.fillRect(row * 10, column * 10, 10, 10);
+      ctx.fillStyle = 'white';
+      ctx.fillText(name[0].toUpperCase(), (row * 10) + 5, (column * 10) + 5);
     });
   }
 
@@ -50,6 +53,11 @@
     drawScores(gameState);
   }
 
+  // Send the entered name to the server in a `name` message.
+  document.querySelector('button').addEventListener('click', () => {
+    socket.emit('name', document.querySelector('#name').value);
+  });
+
   // Players move on the arrow keys only; each valid keystroke sends a `move` message with a
   // single-character argument over the socket to the server.
   document.addEventListener('keydown', (e) => {
@@ -58,6 +66,12 @@
       socket.emit('move', command);
       e.preventDefault();
     }
+  });
+
+  // When the server sends the `welcome` message, hide the lobby for and show the game board.
+  socket.on('welcome', () => {
+    document.querySelector('div#lobby').style.display = 'none';
+    document.querySelector('div#game').style.display = 'block';
   });
 
   // When the server sends us a `state` message, we render the game state it sends us.
