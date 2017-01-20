@@ -76,4 +76,8 @@
 
   // When the server sends us a `state` message, we render the game state it sends us.
   socket.on('state', renderBoard);
+
+  socket.on('nameused', (name) => {
+    document.querySelector('.error').innerHTML = `Name ${name} taken`;
+  });
 })();

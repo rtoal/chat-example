@@ -19,15 +19,17 @@ io.on('connection', (socket) => {
   // message and a the current game state, "turn off" the `name` message listener, then
   // start accepting `move` messages.
   const nameListener = (name) => {
-    let trimmedName = name.trim();
+    const trimmedName = name.trim();
     if (game.addPlayer(trimmedName)) {
-      io.emit('welcome');
+      io.to(socket.id).emit('welcome');
       io.emit('state', game.state());
       socket.removeListener('name', nameListener);
       socket.on('move', (direction) => {
         game.move(direction, trimmedName);
         io.emit('state', game.state());
       });
+    } else {
+      io.to(socket.id).emit('nameused', trimmedName);
     }
   };
   socket.on('name', nameListener);
