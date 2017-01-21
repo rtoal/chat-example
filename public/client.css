@@ -1,5 +1,5 @@
 body {
-  margin: 5px;
+  margin: 10px;
 }
 
 #lobby {
@@ -13,7 +13,7 @@ body {
 canvas {
   vertical-align: top;
   line-height: normal;
-  border: 1px solid grey;
+  background-color: #dfd;
   display: inline-block;
   width: 640px;
 }
@@ -22,7 +22,23 @@ table {
   vertical-align: top;
   line-height: normal;
   display: inline-block;
+  background-color: #dff;
 }
+
+th {
+  background-color: #9ff;
+  padding: 2px 10px;
+}
+
+td {
+  background-color: #dff;
+  padding: 2px 10px;
+}
+
+td:nth-child(2) {
+  text-align: right;
+}
+
 
 .error {
   color: #f22;
