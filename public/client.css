@@ -23,3 +23,7 @@ table {
   line-height: normal;
   display: inline-block;
 }
+
+.error {
+  color: #f22;
+}

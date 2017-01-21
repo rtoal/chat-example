@@ -48,7 +48,7 @@ exports.addPlayer = (name) => {
 
 function placeCoins() {
   permutation(WIDTH * HEIGHT).slice(0, NUM_COINS).forEach((position, i) => {
-    const coinValue = i < 50 ? 1 : i < 75 ? 2 : i < 95 ? 5 : 10;
+    const coinValue = (i < 50) ? 1 : (i < 75) ? 2 : (i < 95) ? 5 : 10;
     const index = `${Math.floor(position / WIDTH)},${Math.floor(position % WIDTH)}`;
     database.coins[index] = coinValue;
   });
@@ -60,7 +60,7 @@ function placeCoins() {
 // walk through an array of name-score pairs and render them.
 exports.state = () => {
   const positions = Object.entries(database)
-    .filter(([key, _]) => key.startsWith('player:')) // eslint-disable-line no-unused-vars
+    .filter(([key]) => key.startsWith('player:'))
     .map(([key, value]) => [key.substring(7), value]);
   const scores = Object.entries(database.scores);
   scores.sort(([, v1], [, v2]) => v1 < v2);

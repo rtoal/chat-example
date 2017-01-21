@@ -29,7 +29,7 @@ io.on('connection', (socket) => {
         io.emit('state', game.state());
       });
     } else {
-      io.to(socket.id).emit('nameused', trimmedName);
+      io.to(socket.id).emit('badname', trimmedName);
     }
   };
   socket.on('name', nameListener);

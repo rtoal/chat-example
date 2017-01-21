@@ -8,3 +8,5 @@ plugins:
 rules:
   no-console:
     off
+  no-nested-ternary:
+    off
