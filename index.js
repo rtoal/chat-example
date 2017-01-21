@@ -1,3 +1,9 @@
+/*
+ * Coin game server.
+ *
+ * This is the entry point for the Node.js application.
+ */
+
 const express = require('express');
 
 const app = express();
@@ -8,10 +14,10 @@ const game = require('./server/game');
 // Images, scripts, stylesheets, and other assets will be in this directory.
 app.use(express.static('public'));
 
+// The client application lives on a single HTML page.
 app.get('/', (req, res) => {
   res.sendFile(`${__dirname}/public/index.html`);
 });
-
 
 io.on('connection', (socket) => {
   // When first connected, don't accept any messages except `name`. Keep accepting name
@@ -35,6 +41,7 @@ io.on('connection', (socket) => {
   socket.on('name', nameListener);
 });
 
+// It begins (https://xkcd.com/1656/)
 const port = process.env.PORT || 3000;
 http.listen(port, () => {
   console.log(`Server listening on port ${port}`);
