@@ -4,6 +4,7 @@
   "description": "my first socket.io app",
   "dependencies": {
     "express": "4.10.2",
+    "redis": "^2.6.5",
     "socket.io": "1.2.0"
   },
   "main": "index.js",
