@@ -45,9 +45,14 @@ const database = {
 };
 
 exports.addPlayer = (name) => {
-  if (name.length === 0 || name.length > MAX_PLAYER_NAME_LENGTH || client.sismember("usednames", name) === 1) {
+  if (name.length === 0 || name.length > MAX_PLAYER_NAME_LENGTH) {
     return false;
   }
+  client.sismember("usednames", name, (err, res) => {
+    if (res === 1) {
+      return false;
+    }
+  });
   client.sadd("usednames", name);
   client.set(`player:${name}`, randomPoint(WIDTH, HEIGHT).toString());
   client.zadd("scores", 0, name);
@@ -67,20 +72,28 @@ function placeCoins() {
 // Note that we return the scores in sorted order, so the client just has to iteratively
 // walk through an array of name-score pairs and render them.
 exports.state = () => {
-  const positions = client.keys("player:").map((key) => [key.substring(7), client.get(key)]);
-  const raw_scores = client.zrevrange("scores", 0, -1, "WITHSCORES");
+  let positions = [];
+  client.keys("player:", (err, res) => {
+    res.map((key) => [key.substring(7), client.get(key)]);
+    positions = res;
+  });
 
-  let temp_scores = [];
-  for (let i = 0; i < scores.length; i+=2) {
-    scores[i] = [raw_scores[i], raw_scores[i+1]];
-  }
-  const scores = tempt_scores.slice();
+  let scores = [];
+  client.zrevrange("scores", 0, -1, "WITHSCORES" (err, res) => {
+    for (let i = 0; i < res.length; i+=2) {
+      scores[i] = [res[i], res[i+1]];
+    }
+  });
 
-  const coins = client.hkeys("coins").map((key) => [key, client.hget("coins", key)]);
+  let coins = [];
+  client.hkeys("coins", (err, res) => {
+    res.map((key) => [key, client.hget("coins", key)]);
+  });
+
   return {
     positions,
     scores,
-    coins: coins,
+    coins,
   };
 };
 
@@ -88,9 +101,13 @@ exports.move = (direction, name) => {
   const delta = { U: [0, -1], R: [1, 0], D: [0, 1], L: [-1, 0] }[direction];
   if (delta) {
     const playerKey = `player:${name}`;
-    const [x, y] = client.get(playerKey).split(',');
+    let [x, y] = [0, 0];
+    client.get(playerKey, (err, res) => {
+      [x, y] = res.split(',');
+    });
     const [newX, newY] = [clamp(+x + delta[0], 0, WIDTH - 1), clamp(+y + delta[1], 0, HEIGHT - 1)];
-    const value = client.hget("coins", `${newX},${newY}`);
+    let value = null;
+    client.hget("coins", `${newX},${newY}`, (err, res) => value = res);
     if (value) {
       client.zincrby("scores", value, name);
       client.hdel("coins", `${newX},${newY}`);
@@ -98,9 +115,11 @@ exports.move = (direction, name) => {
     client.set(playerKey, `${newX},${newY}`);
 
     // When all coins collected, generate a new batch.
-    if (client.hlen("coins") === 0) {
-      placeCoins();
-    }
+    client.hlen("coins", (err, res) => {
+      if (res === 0) {
+        placeCoins();
+      }
+    });
   }
 };
 
