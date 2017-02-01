@@ -42,18 +42,18 @@ const NUM_COINS = 100;
 }; */
 
 exports.addPlayer = (name) => {
-  if (name.length === 0 || name.length > MAX_PLAYER_NAME_LENGTH) {
-    return false;
-  }
   client.sismember('usednames', name, (err, res) => {
-    if (res === 1) {
+    if (res === 1 || name.length === 0 || name.length > MAX_PLAYER_NAME_LENGTH) {
       return false;
+    } else {
+      client.sadd('usednames', name, () => {
+        client.set(`player:${name}`, randomPoint(WIDTH, HEIGHT).toString(), () => {
+          client.zadd('scores', 0, name);
+          return true;
+        });
+      });
     }
   });
-  client.sadd('usednames', name);
-  client.set(`player:${name}`, randomPoint(WIDTH, HEIGHT).toString());
-  client.zadd('scores', 0, name);
-  return true;
 };
 
 function placeCoins() {
@@ -70,29 +70,26 @@ function placeCoins() {
 // walk through an array of name-score pairs and render them.
 exports.state = () => {
   let positions = [];
+  let coins = [];
+  const scores = [];
   client.keys('player:', (err, res) => {
     res.map(key => [key.substring(7), client.get(key)]);
     positions = res;
+    client.zrevrange('scores', 0, -1, 'WITHSCORES', (err2, res2) => {
+      for (let i = 0; i < res2.length; i += 2) {
+        scores[i] = [res2[i], res2[i + 1]];
+      }
+      client.hkeys('coins', (err3, res3) => {
+        res3.map(key => [key, client.hget('coins', key)]);
+        coins = res3;
+        return {
+          positions,
+          scores,
+          coins,
+        };
+      });
+    });
   });
-
-  const scores = [];
-  client.zrevrange('scores', 0, -1, 'WITHSCORES', (err, res) => {
-    for (let i = 0; i < res.length; i += 2) {
-      scores[i] = [res[i], res[i + 1]];
-    }
-  });
-
-  let coins = [];
-  client.hkeys('coins', (err, res) => {
-    res.map(key => [key, client.hget('coins', key)]);
-    coins = res;
-  });
-
-  return {
-    positions,
-    scores,
-    coins,
-  };
 };
 
 exports.move = (direction, name) => {
@@ -102,21 +99,22 @@ exports.move = (direction, name) => {
     let [x, y] = [0, 0];
     client.get(playerKey, (err, res) => {
       [x, y] = res.split(',');
-    });
-    const [newX, newY] = [clamp(+x + delta[0], 0, WIDTH - 1), clamp(+y + delta[1], 0, HEIGHT - 1)];
-    let value = null;
-    client.hget('coins', `${newX},${newY}`, (err, res) => value = res);
-    if (value) {
-      client.zincrby('scores', value, name);
-      client.hdel('coins', `${newX},${newY}`);
-    }
-    client.set(playerKey, `${newX},${newY}`);
-
-    // When all coins collected, generate a new batch.
-    client.hlen('coins', (err, res) => {
-      if (res === 0) {
-        placeCoins();
-      }
+      const [newX, newY] = [clamp(+x + delta[0], 0, WIDTH - 1), clamp(+y + delta[1], 0, HEIGHT - 1)];
+      client.hget('coins', `${newX},${newY}`, (err2, res2) => {
+        if (res2) {
+          client.zincrby('scores', value, name, (err3, res3) => {
+            client.hdel('coins', `${newX}, ${newY}`);
+          });
+        }
+        client.set(playerKey, `${newX},${newY}`, (err3, res3) => {
+          // When all coins collected, generate a new batch.
+          client.hlen('coins', (err4, res4) => {
+            if (res4 === 0) {
+              placeCoins();
+            }
+          });
+        });
+      });
     });
   }
 };
