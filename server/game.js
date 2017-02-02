@@ -46,10 +46,11 @@ exports.addPlayer = (name) => {
     if (res === 1 || name.length === 0 || name.length > MAX_PLAYER_NAME_LENGTH) {
       return false;
     } else {
-      client.sadd('usednames', name, () => {
-        client.set(`player:${name}`, randomPoint(WIDTH, HEIGHT).toString(), () => {
-          client.zadd('scores', 0, name);
-          return true;
+      client.sadd('usednames', name, (err2, res2) => {
+        client.set(`player:${name}`, randomPoint(WIDTH, HEIGHT).toString(), (err3, res3) => {
+          client.zadd('scores', 0, name, (err4, res4) => {
+            return true; 
+          });
         });
       });
     }
