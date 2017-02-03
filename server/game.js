@@ -73,23 +73,25 @@ exports.state = () => {
   let positions = [];
   let coins = [];
   const scores = [];
-  return client.keys('player:', (err, res) => {
-    res.map(key => [key.substring(7), client.get(key)]);
-    positions = res;
-    client.zrevrange('scores', 0, -1, 'WITHSCORES', (err2, res2) => {
-      for (let i = 0; i < res2.length; i += 2) {
-        scores[i] = [res2[i], res2[i + 1]];
-      }
-      client.hkeys('coins', (err3, res3) => {
-        res3.map(key => [key, client.hget('coins', key)]);
-        coins = res3;
-        return {
-          positions,
-          scores,
-          coins,
-        };
+  return client.keys('player:*', (err, res) => {
+    res.forEach((key) => client.get(key, (err2, res2) => {
+      positions.push([key.substring(7), res2]);
+      client.zrevrange('scores', 0, -1, 'WITHSCORES', (err3, res3) => {
+        for (let i = 0; i < res3.length; i += 2) {
+          scores[i] = [res3[i], res3[i + 1]];
+        }
+        client.hkeys('coins', (err4, res4) => {
+          res4.forEach((key) => client.hget('coins', key, (err5, res5) => {
+            coins.push([key, res5]);
+            return {
+              positions,
+              scores,
+              coins,
+            };
+          }));
+        });
       });
-    });
+    }));
   });
 };
 
@@ -103,7 +105,7 @@ exports.move = (direction, name) => {
       const [newX, newY] = [clamp(+x + delta[0], 0, WIDTH - 1), clamp(+y + delta[1], 0, HEIGHT - 1)];
       client.hget('coins', `${newX},${newY}`, (err2, res2) => {
         if (res2) {
-          client.zincrby('scores', value, name, (err3, res3) => {
+          client.zincrby('scores', res2, name, (err3, res3) => {
             client.hdel('coins', `${newX}, ${newY}`);
           });
         }
