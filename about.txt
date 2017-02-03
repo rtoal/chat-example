@@ -1,3 +1,0 @@
-My machine (Debian 7/Wheezy) doesn't support Node.js 7, and none of my browsers support ES6. Sad times, need to transpile ES6 down to ES5, and for Node.js 7, I guess I'll just have to work on my Windows desktop (PC).
-
-And I still can't access the course website!

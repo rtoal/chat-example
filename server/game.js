@@ -42,7 +42,7 @@ const NUM_COINS = 100;
 }; */
 
 exports.addPlayer = (name) => {
-  client.sismember('usednames', name, (err, res) => {
+  return client.sismember('usednames', name, (err, res) => {
     if (res === 1 || name.length === 0 || name.length > MAX_PLAYER_NAME_LENGTH) {
       return false;
     } else {
@@ -73,7 +73,7 @@ exports.state = () => {
   let positions = [];
   let coins = [];
   const scores = [];
-  client.keys('player:', (err, res) => {
+  return client.keys('player:', (err, res) => {
     res.map(key => [key.substring(7), client.get(key)]);
     positions = res;
     client.zrevrange('scores', 0, -1, 'WITHSCORES', (err2, res2) => {
