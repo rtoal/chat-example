@@ -29,6 +29,7 @@ io.on('connection', (socket) => {
     game.addPlayer(trimmedName, io);
     socket.on('name', (goodName) => {
       if (goodName) {
+        console.log("Awfawef");
         io.to(socket.id).emit('welcome');
         game.state(io);
         socket.removeListener('name', nameListener);
@@ -37,6 +38,7 @@ io.on('connection', (socket) => {
           io.emit('state', game.state());
         });
       } else {
+        console.log("Awefawefawe");
         io.to(socket.id).emit('badname', trimmedName);
       }
     });
