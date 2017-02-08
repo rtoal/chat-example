@@ -9,12 +9,6 @@
 
 const { clamp, randomPoint, permutation } = require('./gameutil');
 
-const express = require('express');
-
-const app = express();
-const http = require('http').Server(app);
-const io = require('socket.io')(http);
-
 // https://www.npmjs.com/package/redis
 const redis = require('redis');
 
@@ -50,14 +44,12 @@ const NUM_COINS = 100;
 exports.addPlayer = (name, io) => {
   client.sismember('usednames', name, (err, res) => {
     if (res === 1 || name.length === 0 || name.length > MAX_PLAYER_NAME_LENGTH) {
-      io.emit('name', false);
-      console.log(io);
+      io.emit('goodName', false);
     } else {
       client.sadd('usednames', name, (err2, res2) => {
         client.set(`player:${name}`, randomPoint(WIDTH, HEIGHT).toString(), (err3, res3) => {
           client.zadd('scores', 0, name, (err4, res4) => {
-            io.emit('name', true);
-            console.log(io);
+            io.emit('goodName', true);
           });
         });
       });
