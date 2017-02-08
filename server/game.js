@@ -41,15 +41,15 @@ const NUM_COINS = 100;
   coins: {},
 }; */
 
-exports.addPlayer = (name) => {
-  return client.sismember('usednames', name, (err, res) => {
+exports.addPlayer = (name, io) => {
+  client.sismember('usednames', name, (err, res) => {
     if (res === 1 || name.length === 0 || name.length > MAX_PLAYER_NAME_LENGTH) {
-      return false;
+      io.emit('name', false);
     } else {
       client.sadd('usednames', name, (err2, res2) => {
         client.set(`player:${name}`, randomPoint(WIDTH, HEIGHT).toString(), (err3, res3) => {
           client.zadd('scores', 0, name, (err4, res4) => {
-            return true; 
+            io.emit('name', true);
           });
         });
       });
@@ -69,11 +69,11 @@ function placeCoins() {
 // the positions of each player, the scores, and the positions (and values) of each coin.
 // Note that we return the scores in sorted order, so the client just has to iteratively
 // walk through an array of name-score pairs and render them.
-exports.state = () => {
+exports.state = (io) => {
   let positions = [];
   let coins = [];
   const scores = [];
-  return client.keys('player:*', (err, res) => {
+  client.keys('player:*', (err, res) => {
     res.forEach((key) => client.get(key, (err2, res2) => {
       positions.push([key.substring(7), res2]);
       client.zrevrange('scores', 0, -1, 'WITHSCORES', (err3, res3) => {
@@ -83,11 +83,11 @@ exports.state = () => {
         client.hkeys('coins', (err4, res4) => {
           res4.forEach((key) => client.hget('coins', key, (err5, res5) => {
             coins.push([key, res5]);
-            return {
+            io.emit('state', {
               positions,
               scores,
               coins,
-            };
+            });
           }));
         });
       });
