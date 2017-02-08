@@ -69,20 +69,20 @@ function placeCoins() {
 // the positions of each player, the scores, and the positions (and values) of each coin.
 // Note that we return the scores in sorted order, so the client just has to iteratively
 // walk through an array of name-score pairs and render them.
-exports.state = (io) => {
-  let positions = [];
-  let coins = [];
+const state = exports.state = (io) => {
+  const positions = [];
+  const coins = [];
   const scores = [];
   client.keys('player:*', (err, res) => {
-    res.forEach((key) => client.get(key, (err2, res2) => {
+    res.forEach(key => client.get(key, (err2, res2) => {
       positions.push([key.substring(7), res2]);
       client.zrevrange('scores', 0, -1, 'WITHSCORES', (err3, res3) => {
         for (let i = 0; i < res3.length; i += 2) {
           scores[i] = [res3[i], res3[i + 1]];
         }
         client.hkeys('coins', (err4, res4) => {
-          res4.forEach((key) => client.hget('coins', key, (err5, res5) => {
-            coins.push([key, res5]);
+          res4.forEach(key2 => client.hget('coins', key2, (err5, res5) => {
+            coins.push([key2, res5]);
             io.emit('state', {
               positions,
               scores,
@@ -95,7 +95,7 @@ exports.state = (io) => {
   });
 };
 
-exports.move = (direction, name, io) => {
+exports.move = (direction, name) => {
   const delta = { U: [0, -1], R: [1, 0], D: [0, 1], L: [-1, 0] }[direction];
   if (delta) {
     const playerKey = `player:${name}`;
