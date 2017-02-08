@@ -35,7 +35,6 @@ io.on('connection', (socket) => {
         socket.removeListener('name', nameListener);
         socket.on('move', (direction) => {
           game.move(direction, trimmedName);
-          io.emit('state', game.state());
         });
       } else {
         console.log("Awefawefawe");

@@ -9,6 +9,12 @@
 
 const { clamp, randomPoint, permutation } = require('./gameutil');
 
+const express = require('express');
+
+const app = express();
+const http = require('http').Server(app);
+const io = require('socket.io')(http);
+
 // https://www.npmjs.com/package/redis
 const redis = require('redis');
 
@@ -45,11 +51,13 @@ exports.addPlayer = (name, io) => {
   client.sismember('usednames', name, (err, res) => {
     if (res === 1 || name.length === 0 || name.length > MAX_PLAYER_NAME_LENGTH) {
       io.emit('name', false);
+      console.log(io);
     } else {
       client.sadd('usednames', name, (err2, res2) => {
         client.set(`player:${name}`, randomPoint(WIDTH, HEIGHT).toString(), (err3, res3) => {
           client.zadd('scores', 0, name, (err4, res4) => {
             io.emit('name', true);
+            console.log(io);
           });
         });
       });
@@ -95,7 +103,7 @@ exports.state = (io) => {
   });
 };
 
-exports.move = (direction, name) => {
+exports.move = (direction, name, io) => {
   const delta = { U: [0, -1], R: [1, 0], D: [0, 1], L: [-1, 0] }[direction];
   if (delta) {
     const playerKey = `player:${name}`;
@@ -120,6 +128,7 @@ exports.move = (direction, name) => {
       });
     });
   }
+  state();
 };
 
 placeCoins();
