@@ -12,6 +12,9 @@ const { clamp, randomPoint, permutation } = require('./gameutil');
 // https://www.npmjs.com/package/redis
 const redis = require('redis');
 
+// const bluebird = require('bluebird');
+// bluebird.promisifyAll(redis.RedisClient.prototype);
+
 const client = redis.createClient();
 client.on('error', err => console.log(`Error ${err}`));
 
@@ -41,15 +44,15 @@ const NUM_COINS = 100;
   coins: {},
 }; */
 
-exports.addPlayer = (name, io) => {
+exports.addPlayer = (name, io, socket) => {
   client.sismember('usednames', name, (err, res) => {
     if (res === 1 || name.length === 0 || name.length > MAX_PLAYER_NAME_LENGTH) {
-      io.emit('goodName', false);
+      io.to(socket.id).emit('goodname', false);
     } else {
       client.sadd('usednames', name, (err2, res2) => {
         client.set(`player:${name}`, randomPoint(WIDTH, HEIGHT).toString(), (err3, res3) => {
           client.zadd('scores', 0, name, (err4, res4) => {
-            io.emit('goodName', true);
+            io.to(socket.id).emit('goodname', true);
           });
         });
       });
@@ -95,7 +98,7 @@ const state = exports.state = (io) => {
   });
 };
 
-exports.move = (direction, name) => {
+exports.move = (direction, name, io) => {
   const delta = { U: [0, -1], R: [1, 0], D: [0, 1], L: [-1, 0] }[direction];
   if (delta) {
     const playerKey = `player:${name}`;
@@ -120,7 +123,7 @@ exports.move = (direction, name) => {
       });
     });
   }
-  state();
+  state(io);
 };
 
 placeCoins();
