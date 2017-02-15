@@ -82,13 +82,13 @@ exports.state = () => {
         }
         client.hkeys('coins', (err4, res4) => {
           res4.forEach((key) => client.hget('coins', key, (err5, res5) => {
-            coins.push([key, res5]);
-            return {
-              positions,
-              scores,
-              coins,
-            };
+            coins.push([key, res5]); 
           }));
+          return {
+            positions,
+            scores,
+            coins
+          };
         });
       });
     }));
