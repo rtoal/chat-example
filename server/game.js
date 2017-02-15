@@ -12,9 +12,6 @@ const { clamp, randomPoint, permutation } = require('./gameutil');
 // https://www.npmjs.com/package/redis
 const redis = require('redis');
 
-// const bluebird = require('bluebird');
-// bluebird.promisifyAll(redis.RedisClient.prototype);
-
 const client = redis.createClient();
 client.on('error', err => console.log(`Error ${err}`));
 
@@ -44,15 +41,15 @@ const NUM_COINS = 100;
   coins: {},
 }; */
 
-exports.addPlayer = (name, io, socket) => {
+exports.addPlayer = (name) => {
   client.sismember('usednames', name, (err, res) => {
     if (res === 1 || name.length === 0 || name.length > MAX_PLAYER_NAME_LENGTH) {
-      io.to(socket.id).emit('goodname', false);
+      return false;
     } else {
       client.sadd('usednames', name, (err2, res2) => {
         client.set(`player:${name}`, randomPoint(WIDTH, HEIGHT).toString(), (err3, res3) => {
           client.zadd('scores', 0, name, (err4, res4) => {
-            io.to(socket.id).emit('goodname', true);
+            return true; 
           });
         });
       });
@@ -72,25 +69,25 @@ function placeCoins() {
 // the positions of each player, the scores, and the positions (and values) of each coin.
 // Note that we return the scores in sorted order, so the client just has to iteratively
 // walk through an array of name-score pairs and render them.
-const state = exports.state = (io) => {
-  const positions = [];
-  const coins = [];
+exports.state = () => {
+  let positions = [];
+  let coins = [];
   const scores = [];
   client.keys('player:*', (err, res) => {
-    res.forEach(key => client.get(key, (err2, res2) => {
+    res.forEach((key) => client.get(key, (err2, res2) => {
       positions.push([key.substring(7), res2]);
       client.zrevrange('scores', 0, -1, 'WITHSCORES', (err3, res3) => {
         for (let i = 0; i < res3.length; i += 2) {
           scores[i] = [res3[i], res3[i + 1]];
         }
         client.hkeys('coins', (err4, res4) => {
-          res4.forEach(key2 => client.hget('coins', key2, (err5, res5) => {
-            coins.push([key2, res5]);
-            io.emit('state', {
+          res4.forEach((key) => client.hget('coins', key, (err5, res5) => {
+            coins.push([key, res5]);
+            return {
               positions,
               scores,
               coins,
-            });
+            };
           }));
         });
       });
@@ -98,7 +95,7 @@ const state = exports.state = (io) => {
   });
 };
 
-exports.move = (direction, name, io) => {
+exports.move = (direction, name) => {
   const delta = { U: [0, -1], R: [1, 0], D: [0, 1], L: [-1, 0] }[direction];
   if (delta) {
     const playerKey = `player:${name}`;
@@ -123,7 +120,6 @@ exports.move = (direction, name, io) => {
       });
     });
   }
-  state(io);
 };
 
 placeCoins();
