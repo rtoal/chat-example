@@ -30,8 +30,7 @@
   }
 
   function drawCoins(gameState) {
-    console.log(gameState);
-    gameState.coins.forEach(([position, coinValue]) => {
+    Object.entries(gameState.coins).forEach(([position, coinValue]) => {
       fillCell(...position.split(','), coinValue, 'black');
     });
   }

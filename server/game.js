@@ -69,9 +69,8 @@ function placeCoins() {
 // the positions of each player, the scores, and the positions (and values) of each coin.
 // Note that we return the scores in sorted order, so the client just has to iteratively
 // walk through an array of name-score pairs and render them.
-exports.state = () => {
-  let positions = [];
-  let coins = [];
+exports.state = (callback) => {
+  const positions = [];
   const scores = [];
   client.keys('player:*', (err, res) => {
     res.forEach((key) => client.get(key, (err2, res2) => {
@@ -81,22 +80,12 @@ exports.state = () => {
           scores[i] = [res3[i], res3[i + 1]];
         }
         client.hgetall('coins', (err4, res4) => {
-          let coin = 0;
-          console.log(res4);
-          res4.forEach((val, index) => {
-            if (index % 2 === 0) {
-              coin.push(val);    
-            } else {
-              coin.push(val);
-              coins.push(coin.slice());
-              coin = [];
-            }
-          });
-          return {
+          const coins = res4;
+          return callback(null, {
             positions,
             scores,
             coins
-          };          
+          });          
         });
       });
     }));
@@ -114,7 +103,7 @@ exports.move = (direction, name) => {
       client.hget('coins', `${newX},${newY}`, (err2, res2) => {
         if (res2) {
           client.zincrby('scores', res2, name, (err3, res3) => {
-            client.hdel('coins', `${newX}, ${newY}`);
+            client.hdel('coins', `${newX},${newY}`);
           });
         }
         client.set(playerKey, `${newX},${newY}`, (err3, res3) => {
