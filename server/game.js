@@ -92,7 +92,7 @@ exports.state = (callback) => {
   });
 };
 
-exports.move = (direction, name) => {
+exports.move = (direction, name, callback) => {
   const delta = { U: [0, -1], R: [1, 0], D: [0, 1], L: [-1, 0] }[direction];
   if (delta) {
     const playerKey = `player:${name}`;
@@ -112,6 +112,7 @@ exports.move = (direction, name) => {
             if (res4 === 0) {
               placeCoins();
             }
+            return callback(null);
           });
         });
       });

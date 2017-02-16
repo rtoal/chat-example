@@ -34,9 +34,10 @@ io.on('connection', (socket) => {
         });        
         socket.removeListener('name', nameListener);
         socket.on('move', (direction) => {
-          game.move(direction, trimmedName);
-          game.state((err, state) => {
-            io.emit('state', state);    
+          game.move(direction, trimmedName, (err) => {
+            game.state((err, state) => {
+              io.emit('state', state);    
+            });
           });
         });          
       } else {
