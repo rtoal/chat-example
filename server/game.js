@@ -41,15 +41,15 @@ const NUM_COINS = 100;
   coins: {},
 }; */
 
-exports.addPlayer = (name) => {
+exports.addPlayer = (name, callback) => {
   client.sismember('usednames', name, (err, res) => {
     if (res === 1 || name.length === 0 || name.length > MAX_PLAYER_NAME_LENGTH) {
-      return false;
+      return callback(null, false);
     } else {
       client.sadd('usednames', name, (err2, res2) => {
         client.set(`player:${name}`, randomPoint(WIDTH, HEIGHT).toString(), (err3, res3) => {
           client.zadd('scores', 0, name, (err4, res4) => {
-            return true; 
+            return callback(null, true); 
           });
         });
       });
@@ -80,15 +80,23 @@ exports.state = () => {
         for (let i = 0; i < res3.length; i += 2) {
           scores[i] = [res3[i], res3[i + 1]];
         }
-        client.hkeys('coins', (err4, res4) => {
-          res4.forEach((key) => client.hget('coins', key, (err5, res5) => {
-            coins.push([key, res5]); 
-          }));
+        client.hgetall('coins', (err4, res4) => {
+          let coin = 0;
+          console.log(res4);
+          res4.forEach((val, index) => {
+            if (index % 2 === 0) {
+              coin.push(val);    
+            } else {
+              coin.push(val);
+              coins.push(coin.slice());
+              coin = [];
+            }
+          });
           return {
             positions,
             scores,
             coins
-          };
+          };          
         });
       });
     }));
