@@ -9,11 +9,16 @@
 
 const { clamp, randomPoint, permutation } = require('./gameutil');
 
+// https://www.npmjs.com/package/redis
+const redis = require('redis');
+
+const client = redis.createClient();
+client.on('error', err => console.log(`Error ${err}`));
+
 const WIDTH = 64;
 const HEIGHT = 64;
 const MAX_PLAYER_NAME_LENGTH = 32;
 const NUM_COINS = 100;
-
 
 // A KEY-VALUE "DATABASE" FOR THE GAME STATE.
 //
@@ -30,27 +35,33 @@ const NUM_COINS = 100;
 // coins            hash         { "<row>,<col>": coinvalue }
 // usednames        set          all used names, to check quickly if a name has been used
 //
-const database = {
+/* const database = {
   scores: {},
   usednames: new Set(),
   coins: {},
-};
+}; */
 
-exports.addPlayer = (name) => {
-  if (name.length === 0 || name.length > MAX_PLAYER_NAME_LENGTH || database.usednames.has(name)) {
-    return false;
-  }
-  database.usednames.add(name);
-  database[`player:${name}`] = randomPoint(WIDTH, HEIGHT).toString();
-  database.scores[name] = 0;
-  return true;
+exports.addPlayer = (name, callback) => {
+  client.sismember('usednames', name, (err, res) => {
+    if (res === 1 || name.length === 0 || name.length > MAX_PLAYER_NAME_LENGTH) {
+      return callback(null, false);
+    } else {
+      client.sadd('usednames', name, (err2, res2) => {
+        client.set(`player:${name}`, randomPoint(WIDTH, HEIGHT).toString(), (err3, res3) => {
+          client.zadd('scores', 0, name, (err4, res4) => {
+            return callback(null, true); 
+          });
+        });
+      });
+    }
+  });
 };
 
 function placeCoins() {
   permutation(WIDTH * HEIGHT).slice(0, NUM_COINS).forEach((position, i) => {
     const coinValue = (i < 50) ? 1 : (i < 75) ? 2 : (i < 95) ? 5 : 10;
     const index = `${Math.floor(position / WIDTH)},${Math.floor(position % WIDTH)}`;
-    database.coins[index] = coinValue;
+    client.hset('coins', index, coinValue);
   });
 }
 
@@ -58,36 +69,54 @@ function placeCoins() {
 // the positions of each player, the scores, and the positions (and values) of each coin.
 // Note that we return the scores in sorted order, so the client just has to iteratively
 // walk through an array of name-score pairs and render them.
-exports.state = () => {
-  const positions = Object.entries(database)
-    .filter(([key]) => key.startsWith('player:'))
-    .map(([key, value]) => [key.substring(7), value]);
-  const scores = Object.entries(database.scores);
-  scores.sort(([, v1], [, v2]) => v2 - v1);
-  return {
-    positions,
-    scores,
-    coins: database.coins,
-  };
+exports.state = (callback) => {
+  const positions = [];
+  const scores = [];
+  client.keys('player:*', (err, res) => {
+    res.forEach((key) => client.get(key, (err2, res2) => {
+      positions.push([key.substring(7), res2]);
+      client.zrevrange('scores', 0, -1, 'WITHSCORES', (err3, res3) => {
+        for (let i = 0; i < res3.length; i += 2) {
+          scores[i] = [res3[i], res3[i + 1]];
+        }
+        client.hgetall('coins', (err4, res4) => {
+          const coins = res4;
+          return callback(null, {
+            positions,
+            scores,
+            coins
+          });          
+        });
+      });
+    }));
+  });
 };
 
-exports.move = (direction, name) => {
+exports.move = (direction, name, callback) => {
   const delta = { U: [0, -1], R: [1, 0], D: [0, 1], L: [-1, 0] }[direction];
   if (delta) {
     const playerKey = `player:${name}`;
-    const [x, y] = database[playerKey].split(',');
-    const [newX, newY] = [clamp(+x + delta[0], 0, WIDTH - 1), clamp(+y + delta[1], 0, HEIGHT - 1)];
-    const value = database.coins[`${newX},${newY}`];
-    if (value) {
-      database.scores[name] += value;
-      delete database.coins[`${newX},${newY}`];
-    }
-    database[playerKey] = `${newX},${newY}`;
-
-    // When all coins collected, generate a new batch.
-    if (Object.keys(database.coins).length === 0) {
-      placeCoins();
-    }
+    let [x, y] = [0, 0];
+    client.get(playerKey, (err, res) => {
+      [x, y] = res.split(',');
+      const [newX, newY] = [clamp(+x + delta[0], 0, WIDTH - 1), clamp(+y + delta[1], 0, HEIGHT - 1)];
+      client.hget('coins', `${newX},${newY}`, (err2, res2) => {
+        if (res2) {
+          client.zincrby('scores', res2, name, (err3, res3) => {
+            client.hdel('coins', `${newX},${newY}`);
+          });
+        }
+        client.set(playerKey, `${newX},${newY}`, (err3, res3) => {
+          // When all coins collected, generate a new batch.
+          client.hlen('coins', (err4, res4) => {
+            if (res4 === 0) {
+              placeCoins();
+            }
+            return callback(null);
+          });
+        });
+      });
+    });
   }
 };
 
